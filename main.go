@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/aminmortezaie/golang-blockchain/blockchain"
 )
 
@@ -14,7 +12,8 @@ func main() {
 	chain.AddBlock("Third block after Genesis.")
 
 	for _, block := range chain.Blocks {
-		fmt.Printf("PrevHash: %x\n", block.PrevHash)
-		fmt.Printf("block.Data: %s\n", block.Data)
+		block.DeriveHash()
+		// fmt.Printf("PrevHash: %x\n", block.PrevHash)
+		// fmt.Printf("block.Data: %s\n", block.Data)
 	}
 }
