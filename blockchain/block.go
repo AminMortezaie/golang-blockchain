@@ -1,12 +1,5 @@
 package blockchain
 
-import (
-	"bytes"
-	"crypto/sha256"
-	"fmt"
-	"reflect"
-)
-
 type Blockchain struct {
 	Blocks []*Block
 }
@@ -18,16 +11,16 @@ type Block struct {
 	Nonce    int
 }
 
-func (b *Block) DeriveHash() {
-	info := bytes.Join([][]byte{b.Data, b.PrevHash}, []byte{})
-	fmt.Printf("b.Data: %x\n", b.Data)
-	fmt.Printf("b.PrevHash: %x\n", b.PrevHash)
-	fmt.Printf("data1: %x\n", [][]byte{b.Data, b.PrevHash})
-	fmt.Printf("info: %x\n", reflect.TypeOf(info))
+// func (b *Block) DeriveHash() {
+// 	info := bytes.Join([][]byte{b.Data, b.PrevHash}, []byte{})
+// 	fmt.Printf("b.Data: %x\n", b.Data)
+// 	fmt.Printf("b.PrevHash: %x\n", b.PrevHash)
+// 	fmt.Printf("data1: %x\n", [][]byte{b.Data, b.PrevHash})
+// 	fmt.Printf("info: %x\n", reflect.TypeOf(info))
 
-	hash := sha256.Sum256(info)
-	b.Hash = hash[:]
-}
+// 	hash := sha256.Sum256(info)
+// 	b.Hash = hash[:]
+// }
 
 func CreateBlock(data string, prevHash []byte) (block *Block) {
 	block = &Block{[]byte{}, []byte(data), prevHash, 0}

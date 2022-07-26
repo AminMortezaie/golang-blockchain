@@ -15,7 +15,7 @@ import (
 	"math/big"
 )
 
-const Difficulty = 12
+const Difficulty = 18
 
 type ProofOfWork struct {
 	Block  *Block
@@ -52,17 +52,26 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 		data := pow.InitData(nonce)
 		hash = sha256.Sum256(data)
 
-		fmt.Printf("hash: %x%T\n", hash, hash)
 		intHash.SetBytes(hash[:])
-
+		fmt.Printf(" %x\r", hash)
 		if intHash.Cmp(pow.Target) == -1 {
 			break
 		} else {
 			nonce++
 		}
-		fmt.Println()
 	}
+	fmt.Println()
 	return nonce, hash[:]
+}
+
+// it checks if we hash again the gotten data it's equal to hash or not.
+func (pow *ProofOfWork) Validate() bool {
+	var intHash big.Int
+
+	data := pow.InitData(pow.Block.Nonce)
+	hash := sha256.Sum256(data)
+	intHash.SetBytes(hash[:])
+	return intHash.Cmp(pow.Target) == -1
 }
 
 //this would convert a num to HEX
