@@ -15,10 +15,15 @@ type Blockchain struct {
 	Database *badger.DB
 }
 
-func InitBlockchain() *Blockchain {
+type BlockchainIterator struct {
+	CurrentHash []byte
+	Database    *badger.DB
+}
+
+func InitBlockchain() (blockchain *Blockchain) {
 	var lastHash []byte
 
-	opts := badger.DefaultOptions
+	opts := badger.DefaultOptions(dbPath)
 	opts.Dir = dbPath
 	opts.ValueDir = dbPath
 
@@ -38,16 +43,57 @@ func InitBlockchain() *Blockchain {
 
 		} else {
 			item, err := txn.Get([]byte("lh"))
-			lastHash, err = item.Value()
+			Handle(err)
+			lastHash, err = item.ValueCopy(nil)
 			return err
 		}
 	})
+	Handle(err)
 
-	return &Blockchain{[]*Block{Genesis()}}
+	blockchain = &Blockchain{lastHash, db}
+	return
 }
 
 func (chain *Blockchain) AddBlock(data string) {
-	prevBlock := chain.Blocks[len(chain.Blocks)-1]
-	new := CreateBlock(data, prevBlock.Hash)
-	chain.Blocks = append(chain.Blocks, new)
+	var lastHash []byte
+	err := chain.Database.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte("lh"))
+		Handle(err)
+
+		_, err = item.ValueCopy(lastHash)
+		fmt.Printf("lastHash in AddBlock Func: %x\n", lastHash)
+		return err
+	})
+	Handle(err)
+	newBlock := CreateBlock(data, lastHash)
+
+	err = chain.Database.Update(func(txn *badger.Txn) error {
+		err := txn.Set(newBlock.Hash, newBlock.Serialize())
+		Handle(err)
+
+		err = txn.Set([]byte("lh"), newBlock.Hash)
+		chain.LastHash = newBlock.Hash
+		return err
+	})
+	Handle(err)
+}
+
+func (chain *Blockchain) Iterator() (iter *BlockchainIterator) {
+	iter = &BlockchainIterator{chain.LastHash, chain.Database}
+	return
+}
+
+func (iter *BlockchainIterator) Next() *Block {
+	var block *Block
+	var encodedBlock []byte
+	err := iter.Database.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(iter.CurrentHash)
+		Handle(err)
+		_, err = item.ValueCopy(encodedBlock)
+		block = Deserialize(encodedBlock)
+		return err
+	})
+	Handle(err)
+	iter.CurrentHash = block.PrevHash
+	return block
 }

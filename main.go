@@ -7,6 +7,16 @@ import (
 	"github.com/aminmortezaie/golang-blockchain/blockchain"
 )
 
+type CommandLine struct {
+	blockchain *blockchain.Blockchain
+}
+
+func (cli *CommandLine) printUsage() {
+	fmt.Println("Usage:")
+	fmt.Println(" add -block BLOCK_DATA -add a block to the chain")
+	fmt.Println(" print -Prints the blocks in the chain")
+}
+
 func main() {
 	chain := blockchain.InitBlockchain()
 
