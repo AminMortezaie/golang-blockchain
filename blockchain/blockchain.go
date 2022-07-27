@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	dbPath = "./tmp/blocks"
+	dbPath = "./blocks"
 )
 
 type Blockchain struct {
@@ -44,7 +44,10 @@ func InitBlockchain() (blockchain *Blockchain) {
 		} else {
 			item, err := txn.Get([]byte("lh"))
 			Handle(err)
-			lastHash, err = item.ValueCopy(nil)
+			err = item.Value(func(val []byte) error {
+				lastHash = val
+				return nil
+			})
 			return err
 		}
 	})
@@ -60,7 +63,10 @@ func (chain *Blockchain) AddBlock(data string) {
 		item, err := txn.Get([]byte("lh"))
 		Handle(err)
 
-		_, err = item.ValueCopy(lastHash)
+		err = item.Value(func(val []byte) error {
+			lastHash = val
+			return nil
+		})
 		fmt.Printf("lastHash in AddBlock Func: %x\n", lastHash)
 		return err
 	})
@@ -89,7 +95,10 @@ func (iter *BlockchainIterator) Next() *Block {
 	err := iter.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(iter.CurrentHash)
 		Handle(err)
-		_, err = item.ValueCopy(encodedBlock)
+		err = item.Value(func(val []byte) error {
+			encodedBlock = val
+			return nil
+		})
 		block = Deserialize(encodedBlock)
 		return err
 	})
