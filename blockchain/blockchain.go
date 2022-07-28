@@ -2,12 +2,16 @@ package blockchain
 
 import (
 	"fmt"
+	"os"
+	"runtime"
 
 	"github.com/dgraph-io/badger"
 )
 
 const (
-	dbPath = "./blocks"
+	dbPath      = "./blocks"
+	dbFile      = "./blocks/MANIFEST"
+	genesisData = "First Transaction from Genesis "
 )
 
 type Blockchain struct {
@@ -20,8 +24,20 @@ type BlockchainIterator struct {
 	Database    *badger.DB
 }
 
-func InitBlockchain() (blockchain *Blockchain) {
+func DBexists() bool {
+	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func InitBlockchain(address string) (blockchain *Blockchain) {
 	var lastHash []byte
+
+	if DBexists() {
+		fmt.Println("Blockchain already exists.")
+		runtime.Goexit()
+	}
 
 	opts := badger.DefaultOptions(dbPath)
 	opts.Dir = dbPath
@@ -31,25 +47,42 @@ func InitBlockchain() (blockchain *Blockchain) {
 	Handle(err)
 
 	err = db.Update(func(txn *badger.Txn) error {
-		if _, err := txn.Get([]byte("lh")); err == badger.ErrKeyNotFound {
-			fmt.Println("No Existing blockchain found.")
-			genesis := Genesis()
-			fmt.Println("Genesis Proved.")
-			err = txn.Set(genesis.Hash, genesis.Serialize())
-			Handle(err)
-			err = txn.Set([]byte("lh"), genesis.Hash)
-			lastHash = genesis.Hash
-			return err
+		cbtx := CoinbaseTx(address, genesisData)
+		genesis := Genesis(cbtx)
+		fmt.Println("Genesis created")
+		err = txn.Set(genesis.Hash, genesis.Serialize())
+		Handle(err)
+		err = txn.Set([]byte("lh"), genesis.Hash)
+		lastHash = genesis.Hash
+		return err
+	})
 
-		} else {
-			item, err := txn.Get([]byte("lh"))
-			Handle(err)
-			err = item.Value(func(val []byte) error {
-				lastHash = val
-				return nil
-			})
+	blockchain = &Blockchain{lastHash, db}
+	return
+}
+
+func ContinueBlockchain(address string) (blockchain *Blockchain) {
+	var lastHash []byte
+
+	if DBexists() {
+		fmt.Println("No existing blockchain found, create one!")
+		runtime.Goexit()
+	}
+
+	opts := badger.DefaultOptions(dbPath)
+	opts.Dir = dbPath
+	opts.ValueDir = dbPath
+
+	db, err := badger.Open(opts)
+	Handle(err)
+	err = db.Update(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte("lh"))
+		Handle(err)
+		err = item.Value(func(val []byte) error {
+			lastHash = val
 			return err
-		}
+		})
+		return err
 	})
 	Handle(err)
 
