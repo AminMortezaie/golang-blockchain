@@ -91,7 +91,7 @@ func ContinueBlockchain(address string) (blockchain *Blockchain) {
 	return
 }
 
-func (chain *Blockchain) AddBlock(data string) {
+func (chain *Blockchain) AddBlock(transactions []*Transaction) {
 	var lastHash []byte
 	err := chain.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("lh"))
@@ -105,7 +105,7 @@ func (chain *Blockchain) AddBlock(data string) {
 		return err
 	})
 	Handle(err)
-	newBlock := CreateBlock(data, lastHash)
+	newBlock := CreateBlock(transactions, lastHash)
 
 	err = chain.Database.Update(func(txn *badger.Txn) error {
 		err := txn.Set(newBlock.Hash, newBlock.Serialize())
@@ -123,8 +123,7 @@ func (chain *Blockchain) Iterator() (iter *BlockchainIterator) {
 	return
 }
 
-func (iter *BlockchainIterator) Next() *Block {
-	var block *Block
+func (iter *BlockchainIterator) Next() (block *Block) {
 	var encodedBlock []byte
 	err := iter.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(iter.CurrentHash)
@@ -138,12 +137,10 @@ func (iter *BlockchainIterator) Next() *Block {
 	})
 	Handle(err)
 	iter.CurrentHash = block.PrevHash
-	return block
+	return
 }
 
-func (chain *Blockchain) FindUnspentTransactions(address string) []Transaction {
-	var unspentTxs []Transaction
-
+func (chain *Blockchain) FindUnspentTransactions(address string) (unspentTxs []Transaction) {
 	spentTXOs := make(map[string][]int)
 
 	iter := chain.Iterator()
@@ -181,5 +178,41 @@ func (chain *Blockchain) FindUnspentTransactions(address string) []Transaction {
 			break
 		}
 	}
-	return unspentTxs
+	return
+}
+
+// UTXO stands for Unspend Transaction Output.
+func (chain *Blockchain) FindUTXO(address string) (UTXOs []TxOutput) {
+	unspentTransactions := chain.FindUnspentTransactions(address)
+
+	for _, tx := range unspentTransactions {
+		for _, out := range tx.Outputs {
+			if out.CanBeUnlocked(address) {
+				UTXOs = append(UTXOs, out)
+			}
+		}
+	}
+	return
+}
+
+func (chain *Blockchain) FindSpendableOutputs(address string, amount int) (int, map[string][]int) {
+	unspentOuts := make(map[string][]int)
+	unspentTxs := chain.FindUnspentTransactions(address)
+	accumulated := 0
+Work:
+	for _, tx := range unspentTxs {
+		txID := hex.EncodeToString(tx.ID)
+
+		for outIdx, out := range tx.Outputs {
+			if out.CanBeUnlocked(address) && accumulated < amount {
+				accumulated += out.Value
+				unspentOuts[txID] = append(unspentOuts[txID], outIdx)
+
+				if accumulated >= amount {
+					break Work
+				}
+			}
+		}
+	}
+	return accumulated, unspentOuts
 }
