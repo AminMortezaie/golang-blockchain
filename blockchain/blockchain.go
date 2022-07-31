@@ -65,7 +65,7 @@ func InitBlockchain(address string) (blockchain *Blockchain) {
 func ContinueBlockchain(address string) (blockchain *Blockchain) {
 	var lastHash []byte
 
-	if DBexists() {
+	if !DBexists() {
 		fmt.Println("No existing blockchain found, create one!")
 		runtime.Goexit()
 	}
@@ -140,7 +140,8 @@ func (iter *BlockchainIterator) Next() (block *Block) {
 	return
 }
 
-func (chain *Blockchain) FindUnspentTransactions(address string) (unspentTxs []Transaction) {
+func (chain *Blockchain) FindUnspentTransactions(address string) []Transaction {
+	var unspentTxs []Transaction
 	spentTXOs := make(map[string][]int)
 
 	iter := chain.Iterator()
@@ -178,11 +179,12 @@ func (chain *Blockchain) FindUnspentTransactions(address string) (unspentTxs []T
 			break
 		}
 	}
-	return
+	return unspentTxs
 }
 
 // UTXO stands for Unspend Transaction Output.
-func (chain *Blockchain) FindUTXO(address string) (UTXOs []TxOutput) {
+func (chain *Blockchain) FindUTXO(address string) []TxOutput {
+	var UTXOs []TxOutput
 	unspentTransactions := chain.FindUnspentTransactions(address)
 
 	for _, tx := range unspentTransactions {
@@ -192,7 +194,7 @@ func (chain *Blockchain) FindUTXO(address string) (UTXOs []TxOutput) {
 			}
 		}
 	}
-	return
+	return UTXOs
 }
 
 func (chain *Blockchain) FindSpendableOutputs(address string, amount int) (int, map[string][]int) {
