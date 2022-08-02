@@ -31,7 +31,10 @@ func (w Wallet) Address() []byte {
 
 	fmt.Printf("pub key: %x\n", w.PublicKey)
 	fmt.Printf("pub hash: %x\n", pubHash)
-	fmt.Printf("address: %x\n", address)
+	fmt.Printf("fullHash: %x\n", fullHash)
+
+	// there is a typo in the original tutorial. %s instead of %x is correct.
+	fmt.Printf("address: %s\n", address)
 	return address
 }
 
