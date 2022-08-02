@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	dbPath      = "./blocks"
-	dbFile      = "./blocks/MANIFEST"
+	dbPath      = "./tmp/blocks"
+	dbFile      = "./tmp/blocks/MANIFEST"
 	genesisData = "First Transaction from Genesis "
 )
 
