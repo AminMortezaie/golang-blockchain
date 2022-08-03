@@ -6,8 +6,6 @@ import (
 	"encoding/gob"
 	"io/ioutil"
 	"os"
-
-	"github.com/aminmortezaie/golang-blockchain/blockchain"
 )
 
 const walletFile = "./tmp/wallets.data"
@@ -53,12 +51,12 @@ func (ws *Wallets) LoadFile() error {
 	var wallets Wallets
 	filecontent, err := ioutil.ReadFile(walletFile)
 
-	blockchain.Handle(err)
+	Handle(err)
 
 	gob.Register(elliptic.P256())
 	decoder := gob.NewDecoder(bytes.NewReader(filecontent))
 	err = decoder.Decode(&wallets)
-	blockchain.Handle(err)
+	Handle(err)
 
 	ws.Wallets = wallets.Wallets
 	return nil
@@ -71,8 +69,8 @@ func (ws *Wallets) SaveFile() {
 
 	encoder := gob.NewEncoder(&content)
 	err := encoder.Encode(ws)
-	blockchain.Handle(err)
+	Handle(err)
 
 	err = ioutil.WriteFile(walletFile, content.Bytes(), 0644)
-	blockchain.Handle(err)
+	Handle(err)
 }
