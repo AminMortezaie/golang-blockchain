@@ -2,6 +2,8 @@ package blockchain
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/gob"
 	"encoding/hex"
@@ -13,6 +15,30 @@ type Transaction struct {
 	ID      []byte
 	Inputs  []TxInput
 	Outputs []TxOutput
+}
+
+// not used pointer because it won't want to change the original Transaction in memory
+// we should use the copy of the obj
+
+func (tx Transaction) Serialize() []byte {
+	var encoded bytes.Buffer
+
+	enc := gob.NewEncoder(&encoded)
+	err := enc.Encode(tx)
+	Handle(err)
+
+	return encoded.Bytes()
+}
+
+// ridiculous job! using pointer and use the copy afterward!!
+func (tx *Transaction) Hash() []byte {
+	var hash [32]byte
+
+	txCopy := *tx
+	txCopy.ID = []byte{}
+
+	hash = sha256.Sum256(txCopy.Serialize())
+	return hash[:]
 }
 
 func (tx *Transaction) SetID() {
@@ -72,4 +98,47 @@ func NewTransaction(from, to string, amount int, chain *Blockchain) *Transaction
 	tx.SetID()
 
 	return &tx
+}
+
+func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTxs map[string]Transaction) {
+	if tx.IsCoinbase() {
+		return
+	}
+
+	for _, in := range tx.Inputs {
+		if prevTxs[hex.EncodeToString(in.ID)].ID == nil {
+			log.Panic("ERROR: Previous transaction does not exist!")
+		}
+	}
+
+	txCopy := tx.TrimmedCopy()
+
+	for inId, in := range txCopy.Inputs {
+		prevTx := prevTxs[hex.EncodeToString(in.ID)]
+		txCopy.Inputs[inId].Signature = nil
+		txCopy.Inputs[inId].PubKey = prevTx.Outputs[in.Out].PubKeyHash
+		txCopy.ID = txCopy.Hash()
+		txCopy.Inputs[inId].PubKey = nil
+
+		r, s, err := ecdsa.Sign(rand.Reader, &privKey, txCopy.ID)
+		Handle(err)
+		singature := append(r.Bytes(), s.Bytes()...)
+		tx.Inputs[inId].Signature = singature
+	}
+}
+
+func (tx *Transaction) TrimmedCopy() Transaction {
+	var inputs []TxInput
+	var outputs []TxOutput
+
+	for _, in := range tx.Inputs {
+		inputs = append(inputs, TxInput{in.ID, in.Out, nil, nil})
+	}
+
+	for _, out := range tx.Outputs {
+		outputs = append(outputs, TxOutput{out.Value, out.PubKeyHash})
+	}
+	txCopy := Transaction{tx.ID, inputs, outputs}
+
+	return txCopy
 }
