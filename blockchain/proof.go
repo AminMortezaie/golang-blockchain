@@ -30,6 +30,8 @@ func NewProof(b *Block) (pow *ProofOfWork) {
 }
 
 func (pow *ProofOfWork) InitData(nonce int) (data []byte) {
+	// Join concatenates the elements of s to create a new byte slice. The separator
+	// parameter 2 is placed between elements in the resulting slice.
 	data = bytes.Join(
 		[][]byte{
 			pow.Block.PrevHash,
