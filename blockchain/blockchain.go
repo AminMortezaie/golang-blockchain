@@ -237,7 +237,7 @@ func (bc *Blockchain) FindTransaction(ID []byte) (Transaction, error) {
 			break
 		}
 	}
-	return Transaction{}, errors.New("Transacation does not exist!")
+	return Transaction{}, errors.New("TRANSACTION DOES NOT EXIST")
 }
 
 func (bc *Blockchain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
