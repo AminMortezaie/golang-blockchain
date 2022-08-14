@@ -1,5 +1,11 @@
-# Golang - Blockchain
-This repo is cloned from [Tensor-Programming-Golang-Blockchain]("https://github.com/tensor-programming/golang-blockchain").
-<br/><br/>
+# Golang Blockchain
 
-ALERT:THIS CODE WOULD WORK CORRECTLY WITH GOLANG 18.4.(HAS SOME POTENTIAL ERRORS WITH GOLANG VERSION 19.0)  
+### In this tutorial, we add a Wallet Module to our Blockchain app. 
+
+## Run `go run main.go` to run the app, run `go build main.go` to build an executable file.
+
+### Check out the Youtube Tutorial for this [Go Program](https://youtu.be/O9rDas-0s2c). Here is our [Youtube Channel](https://www.youtube.com/channel/UCYqCZOwHbnPwyjawKfE21wg) Subscribe for more content.
+
+### Check out our blog at [tensor-programming.com](http://tensor-programming.com/).
+
+### Our [Twitter](https://twitter.com/TensorProgram), our [facebook](https://www.facebook.com/Tensor-Programming-1197847143611799/) and our [Steemit](https://steemit.com/@tensor).
